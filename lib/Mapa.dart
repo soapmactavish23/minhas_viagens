@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Mapa extends StatefulWidget {
+  String idViagem;
+
+  Mapa({this.idViagem});
+
   @override
   _MapaState createState() => _MapaState();
 }
@@ -15,6 +20,8 @@ class _MapaState extends State<Mapa> {
   CameraPosition _posicaoCamera =
       CameraPosition(target: LatLng(-1.408144, -48.491928), zoom: 16);
 
+  FirebaseFirestore _db = FirebaseFirestore.instance;
+
   _onMapCreated(GoogleMapController controller) {
     _controller.complete(controller);
   }
@@ -23,8 +30,7 @@ class _MapaState extends State<Mapa> {
     List<Placemark> listaEnderecos =
         await placemarkFromCoordinates(latLng.latitude, latLng.longitude);
 
-    if(listaEnderecos != null && listaEnderecos.length > 0){
-
+    if (listaEnderecos != null && listaEnderecos.length > 0) {
       Placemark endereco = listaEnderecos[0];
       String rua = endereco.thoroughfare;
 
@@ -37,8 +43,13 @@ class _MapaState extends State<Mapa> {
 
       setState(() {
         _marcadores.add(marcador);
-      });
+        Map<String, dynamic> viagem = Map();
+        viagem["titulo"] = rua;
+        viagem["latitude"] = latLng.latitude;
+        viagem["longitude"] = latLng.longitude;
 
+        _db.collection("viagens").add(viagem);
+      });
     }
   }
 
@@ -62,10 +73,40 @@ class _MapaState extends State<Mapa> {
     });
   }
 
+  _recuperaViagemParaId(String idViagem) async {
+    if (idViagem != null) {
+      DocumentSnapshot documentSnapshot =
+          await _db.collection("viagens").doc(idViagem).get();
+
+      var dados = documentSnapshot.data();
+
+      String titulo = dados["titulo"];
+      LatLng latLng = LatLng(dados["latitude"], dados["longitude"]);
+
+      setState(() {
+        Marker marcador = Marker(
+            markerId: MarkerId("marcador-${latLng.latitude}-${latLng.longitude}"),
+            position: latLng,
+            infoWindow: InfoWindow(
+              title: titulo,
+            ));
+        _marcadores.add(marcador);
+        _posicaoCamera = CameraPosition(
+          target: latLng,
+          zoom: 16
+        );
+        _movimentarCamera();
+      });
+
+    } else {
+      _adicionarListenerLocalizacao();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _adicionarListenerLocalizacao();
+    _recuperaViagemParaId(widget.idViagem);
   }
 
   @override
