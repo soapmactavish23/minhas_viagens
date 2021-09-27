@@ -35,7 +35,7 @@ As seguintes ferramentas foram usadas na construção do projeto:
 
 ## 📥 Download
 
-  - [Android](https://drive.google.com/file/d/1A4jGq35jZt_gptP2xowYaVTTC80ozi9B/view?usp=sharing)
+  - [Android](https://drive.google.com/file/d/1CoVzCPQ85dckonCG2pJ-Q1k_9gENYjp0/view?usp=sharing)
 
 ## Getting Started
 
